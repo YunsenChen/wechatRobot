@@ -10,8 +10,10 @@ from threading import Thread
 from base.func_chatglm import ChatGLM
 from base.func_chatgpt import ChatGPT
 from base.func_chengyu import cy
+from base.func_jinrirebang_quanzhan import getUrl
 from base.func_news import News
 from base.func_tigerbot import TigerBot
+from base.func_weather import Weather
 from base.func_xinghuo_web import XinghuoWeb
 from configuration import Config
 from constants import ChatType
@@ -252,3 +254,21 @@ class Robot(Job):
         news = News().get_important_news()
         for r in receivers:
             self.sendTextMsg(news, r)
+
+    def jiriRedian(self) -> None:
+        receivers = self.config.NEWS
+        if not receivers:
+            return
+        news = getUrl()
+        for r in receivers:
+            self.sendTextMsg(news, r)
+
+    def weahterReport(self) -> None:
+        #todo:将新闻与天气群组分开
+        receivers = self.config.NEWS
+        if not receivers:
+            return
+        w = Weather()
+        weather =w.getweather()
+        for r in receivers:
+            self.sendTextMsg(weather, r)

@@ -49,13 +49,14 @@ def main(chat_type: int):
     robot.enableReceivingMsg()  # 加队列
 
     # 每天 7 点发送天气预报
-    robot.onEveryTime("20:33", weather_report, robot=robot)
+    # robot.onEveryTime("20:33", weather_report, robot=robot)
 
-    # 每天 7:30 发送新闻
-    robot.onEveryTime("20:34", robot.newsReport)
+    # 每天 7:30 发送天气
+    robot.onEveryTime("07:30", robot.weahterReport)
+    robot.onEveryTime("09:00", robot.jiriRedian)
 
     # 每天 16:30 提醒发日报周报月报
-    robot.onEveryTime("20:35", ReportReminder.remind, robot=robot)
+    robot.onEveryTime("16:35", ReportReminder.remind, robot=robot)
 
 
     # 让机器人一直跑

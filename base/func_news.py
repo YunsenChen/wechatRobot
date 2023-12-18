@@ -48,4 +48,4 @@ class News(object):
 
 if __name__ == "__main__":
     news = News()
-    print(news.get_important_news())
+    print(news)

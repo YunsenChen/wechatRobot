@@ -53,7 +53,8 @@ def main(chat_type: int):
 
     # 每天 7:30 发送天气
     robot.onEveryTime("07:30", robot.weahterReport)
-    robot.onEveryTime("09:00", robot.jiriRedian)
+    #8.29 send jirirebang
+    robot.onEveryTime("08:29", robot.jiriRedian)
 
     # 每天 16:30 提醒发日报周报月报
     robot.onEveryTime("16:35", ReportReminder.remind, robot=robot)

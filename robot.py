@@ -8,6 +8,7 @@ import xml.etree.ElementTree as ET
 from queue import Empty
 
 from threading import Thread
+from dbutils.pooled_db import PooledDB
 
 import pymysql
 from wcferry import Wcf, WxMsg
@@ -44,7 +45,7 @@ class Robot(Job):
         passwd = config.get('database', 'passwd')
         port = config.getint('database', 'port')
         # 创建数据库连接
-        self.db = pymysql.connect(host=host, user=user, passwd=passwd, port=port, database='WechatDB')
+        self.pool = PooledDB(pymysql, 5,host=host, user=user, passwd=passwd, port=port, database='WechatDB')
 
         if ChatType.is_in_chat_types(chat_type):
             if chat_type == ChatType.TIGER_BOT.value and TigerBot.value_check(self.config.TIGERBOT):
@@ -148,32 +149,32 @@ class Robot(Job):
         content = msg.content
         thumb = msg.thumb
         extra = msg.extra
-
+        db = self.pool.connection()
         # 使用 cursor() 方法创建一个游标对象
-        cursor = self.db.cursor()
-
+        cursor = db.cursor()
         # 插入数据的 SQL 语句
         sql = "INSERT INTO messages (msg_type, msg_id, msg_xml, sender, room_id, content, thumb, extra) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
 
         # 执行 SQL 语句
         cursor.execute(sql, (msg_type, msg_id, msg_xml, sender, room_id, content, thumb, extra))
-
         # 提交到数据库执行
-        self.db.commit()
-
+        db.commit()
         # 关闭游标
         cursor.close()
+        db.close()
 
     def get10Message(self,msgsender) :
-        cursor = self.db.cursor()
+        db = self.pool.connection()
+        cursor = db.cursor()
         query = """
         SELECT content FROM messages
         WHERE sender = %s AND msg_type = 1
         ORDER BY id DESC
-        LIMIT 10;
+        LIMIT 50;
         """
         cursor.execute(query, (msgsender,))
         messages = cursor.fetchall()
+        db.close()
         return messages
 
     def processMsg(self, msg: WxMsg) -> None:
@@ -188,24 +189,6 @@ class Robot(Job):
         # 群聊消息
         if msg.from_group():
             self.saveToSql(msg)
-            if msg.sender == 'wxid_v797k4h17sm122'or'wxid_nbrniguti3gw21'or'wxid_0ef7k7drv1jr21':
-                #random.randint(1, 10)
-                random_number = random.randint(1, 10)
-                print(str(random_number))
-                # 判断随机数是否为1
-                if random_number != 1:
-                    return
-                #q = re.sub(r"@.*?[\u2005|\s]", "", msg.content).replace(" ", "")
-                q=self.get10Message(msg.sender)
-                string_list = [tup[0] for tup in q]
-                result_string = ' '.join(string_list)
-                print(result_string)
-                print(type(q))
-                print(q)
-                rsp = self.chat.get_answer("以下是我最近说过的一些话，请帮我总结一下我最近说了什么，并跟我聊天，如果我有提出问题，请回答我的问题,我希望你每次回答的内容不要重复:"+result_string, (msg.roomid if msg.from_group() else msg.sender))
-                if rsp:
-                     self.sendTextMsg(rsp, msg.roomid, msg.sender)
-
 
             # 如果在群里被 @
             if msg.roomid not in self.config.GROUPS:  # 不在配置的响应的群列表里，忽略
@@ -215,7 +198,24 @@ class Robot(Job):
                 self.toAt(msg)
 
             else:  # 其他消息
-                self.toChengyu(msg)
+                #self.toChengyu(msg)
+                if msg.sender == 'wxid_v797k4h17sm122'or'wxid_nbrniguti3gw21'or'wxid_0ef7k7drv1jr21':
+                    #random.randint(1, 10)
+                    random_number = random.randint(1, 60)
+                    print(str(random_number))
+                    # 判断随机数是否为1
+                    if random_number != 20:
+                        return
+                    #q = re.sub(r"@.*?[\u2005|\s]", "", msg.content).replace(" ", "")
+                    q=self.get10Message(msg.sender)
+                    string_list = [tup[0] for tup in q]
+                    result_string = ' '.join(string_list)
+                    print(result_string)
+                    print(type(q))
+                    print(q)
+                    rsp = self.chat.get_answer("以下是我最近说过的一些话，这些话是按照时间顺序排序的，排在前面的话是越晚说的，所以他们更重要，请帮我总结一下我最近说了什么，并按照类别分好，并分析说话人的性格，并且你要充当一个聊天机器人，回答我的问题，以下是我最近的聊天记录:"+result_string, (msg.roomid if msg.from_group() else msg.sender))
+                    if rsp:
+                         self.sendTextMsg(rsp, msg.roomid, msg.sender)
 
             return  # 处理完群聊信息，后面就不需要处理了
 
@@ -320,6 +320,13 @@ class Robot(Job):
             # 添加了好友，更新好友列表
             self.allContacts[msg.sender] = nickName[0]
             self.sendTextMsg(f"Hi {nickName[0]}，我自动通过了你的好友请求。", msg.sender)
+
+    def sendNews(self,news) -> None:
+        receivers = self.config.NEWS
+        if not receivers:
+            return
+        for r in receivers:
+            self.sendTextMsg(news, r)
 
     def newsReport(self) -> None:
         receivers = self.config.NEWS

@@ -11,9 +11,36 @@ class BardAssistant:
         self._model_name = conf["model_name"]
         self._prompt = conf['prompt']
         self._proxy = conf['proxy']
+        genai.configure(api_key=self._api_key, transport="rest")
+        # 模型参数
+        generation_config = {
+            "temperature": 0.9,
+            "top_p": 1,
+            "top_k": 1,
+            "max_output_tokens": 2048,
+        }
 
-        genai.configure(api_key=self._api_key)
-        self._bard = genai.GenerativeModel(self._model_name)
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            }
+        ]
+        self._bard= genai.GenerativeModel(model_name="gemini-pro", generation_config=generation_config,
+                                      safety_settings=safety_settings)
+       #self._bard = genai.GenerativeModel(self._model_name)
 
     def __repr__(self):
         return 'BardAssistant'

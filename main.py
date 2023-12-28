@@ -4,6 +4,7 @@
 import signal
 from argparse import ArgumentParser
 
+from base.func_jinrirebang_quanzhan import *
 from base.func_report_reminder import ReportReminder
 from configuration import Config
 from constants import ChatType
@@ -51,14 +52,71 @@ def main(chat_type: int):
     # 每天 7 点发送天气预报
     # robot.onEveryTime("20:33", weather_report, robot=robot)
 
-    # 每天 7:30 发送天气
-    robot.onEveryTime("07:30", robot.weahterReport)
+
     #8.29 send jirirebang
-    robot.onEveryTime("08:29", robot.jiriRedian)
+    #robot.onEveryTime("23:30", robot.jiriRedian)
+    #times="22:51"
+
+
+    newstime="07:00"
+    robot.onEveryTime(newstime, robot.newsReport)
+    robot.onEveryTime("07:30", robot.weahterReport)
+    robot.onEveryTime(newstime, lambda: robot.sendNews(get36krUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getZhihuUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getXueqiuUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getHuxiuUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getPengpaiUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getAifanUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getShaoshupaiUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getPojieUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getGuanfengwangUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getDongfangCaifuUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getLandianUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getXiaozhongUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getFandouXianTuUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getJuejinUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getJishuUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getGithubUrl()))
+    robot.onEveryTime(newstime, lambda: robot.sendNews(getITUrl()))
+    robot.onEveryTime("23:45", lambda: robot.sendNews(getUrl()))
+
+
+
+    #print(getUrl())
+    #     print(getZhihuUrl())
+    #     print(getITUrl())
+    #     print(getShaoshupaiUrl())
+    #    print(get36krUrl())
+    #    print(getXueqiuUrl())
+    #    print(getHuxiuUrl())
+    #    print(getPengpaiUrl())
+    #    print(getAifanUrl())
+    #    print(getPojieUrl())
+    #    print(getGuanfengwangUrl())
+    #    print(getDongfangCaifuUrl())
+    # print(getLandianUrl())
+    # print(getXiaozhongUrl())
+    #    print(getFandouXianTuUrl())
+    #   print(getJuejinUrl())
+    #    print(getJishuUrl())
+    #    print(getGithubUrl())
 
     # 每天 16:30 提醒发日报周报月报
-    robot.onEveryTime("16:35", ReportReminder.remind, robot=robot)
+#    robot.onEveryTime("16:35", ReportReminder.remind, robot=robot)
 
+    #robot.sendTextMsg("机器人启动成功！", "filehelper")
+
+    # 接收消息
+    # robot.enableRecvMsg()     # 可能会丢消息？
+    robot.enableReceivingMsg()  # 加队列
+
+    # 每天 7 点发送天气预报
+    #robot.onEveryTime("07:00", weather_report, robot=robot)
+
+
+
+    # 每天 16:30 提醒发日报周报月报
+    #robot.onEveryTime("16:30", ReportReminder.remind, robot=robot)
 
     # 让机器人一直跑
     robot.keepRunningAndBlockProcess()

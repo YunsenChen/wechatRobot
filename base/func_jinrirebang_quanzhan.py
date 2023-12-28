@@ -26,7 +26,6 @@ def getUrl():
     text = '\n'.join(result)
     return "全天热点:"+'\n'+text
 
-#todo:
 def get36krUrl():
     # 实现无可视化界面得操作
     chrome_options = Options()

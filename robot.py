@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
-
+import configparser
 import logging
+import random
 import re
 import time
 import xml.etree.ElementTree as ET
 from queue import Empty
+
 from threading import Thread
 
+import pymysql
 from wcferry import Wcf, WxMsg
 
 from base.func_bard import BardAssistant
@@ -33,6 +36,15 @@ class Robot(Job):
         self.LOG = logging.getLogger("Robot")
         self.wxid = self.wcf.get_self_wxid()
         self.allContacts = self.getAllContacts()
+        # 从配置文件中获取数据库连接信息
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        host = config.get('database', 'host')
+        user = config.get('database', 'user')
+        passwd = config.get('database', 'passwd')
+        port = config.getint('database', 'port')
+        # 创建数据库连接
+        self.db = pymysql.connect(host=host, user=user, passwd=passwd, port=port, database='WechatDB')
 
         if ChatType.is_in_chat_types(chat_type):
             if chat_type == ChatType.TIGER_BOT.value and TigerBot.value_check(self.config.TIGERBOT):
@@ -125,6 +137,45 @@ class Robot(Job):
             self.LOG.error(f"无法从 ChatGPT 获得答案")
             return False
 
+    def saveToSql(self, msg: WxMsg) -> None:
+
+        # 获取消息的各个字段
+        msg_type = msg.type
+        msg_id = msg.id
+        msg_xml = msg.xml
+        sender = msg.sender
+        room_id = msg.roomid
+        content = msg.content
+        thumb = msg.thumb
+        extra = msg.extra
+
+        # 使用 cursor() 方法创建一个游标对象
+        cursor = self.db.cursor()
+
+        # 插入数据的 SQL 语句
+        sql = "INSERT INTO messages (msg_type, msg_id, msg_xml, sender, room_id, content, thumb, extra) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+
+        # 执行 SQL 语句
+        cursor.execute(sql, (msg_type, msg_id, msg_xml, sender, room_id, content, thumb, extra))
+
+        # 提交到数据库执行
+        self.db.commit()
+
+        # 关闭游标
+        cursor.close()
+
+    def get10Message(self,msgsender) :
+        cursor = self.db.cursor()
+        query = """
+        SELECT content FROM messages
+        WHERE sender = %s AND msg_type = 1
+        ORDER BY id DESC
+        LIMIT 10;
+        """
+        cursor.execute(query, (msgsender,))
+        messages = cursor.fetchall()
+        return messages
+
     def processMsg(self, msg: WxMsg) -> None:
         """当接收到消息的时候，会调用本方法。如果不实现本方法，则打印原始消息。
         此处可进行自定义发送的内容,如通过 msg.content 关键字自动获取当前天气信息，并发送到对应的群组@发送者
@@ -136,6 +187,26 @@ class Robot(Job):
 
         # 群聊消息
         if msg.from_group():
+            self.saveToSql(msg)
+            if msg.sender == 'wxid_v797k4h17sm122'or'wxid_nbrniguti3gw21'or'wxid_0ef7k7drv1jr21':
+                #random.randint(1, 10)
+                random_number = random.randint(1, 10)
+                print(str(random_number))
+                # 判断随机数是否为1
+                if random_number != 1:
+                    return
+                #q = re.sub(r"@.*?[\u2005|\s]", "", msg.content).replace(" ", "")
+                q=self.get10Message(msg.sender)
+                string_list = [tup[0] for tup in q]
+                result_string = ' '.join(string_list)
+                print(result_string)
+                print(type(q))
+                print(q)
+                rsp = self.chat.get_answer("以下是我最近说过的一些话，请帮我总结一下我最近说了什么，并跟我聊天，如果我有提出问题，请回答我的问题,我希望你每次回答的内容不要重复:"+result_string, (msg.roomid if msg.from_group() else msg.sender))
+                if rsp:
+                     self.sendTextMsg(rsp, msg.roomid, msg.sender)
+
+
             # 如果在群里被 @
             if msg.roomid not in self.config.GROUPS:  # 不在配置的响应的群列表里，忽略
                 return

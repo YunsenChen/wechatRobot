@@ -60,7 +60,7 @@ def main(chat_type: int):
 
     newstime="07:00"
     robot.onEveryTime(newstime, robot.newsReport)
-    robot.onEveryTime("07:30", robot.weahterReport)
+    #robot.onEveryTime("07:30", robot.weahterReport)
     robot.onEveryTime(newstime, lambda: robot.sendNews(get36krUrl()))
     robot.onEveryTime(newstime, lambda: robot.sendNews(getZhihuUrl()))
     robot.onEveryTime(newstime, lambda: robot.sendNews(getXueqiuUrl()))
